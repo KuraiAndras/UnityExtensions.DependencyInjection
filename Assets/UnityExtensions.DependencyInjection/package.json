@@ -1,0 +1,10 @@
+{
+    "name": "com.unityextensions.dependencyinjection",
+    "version": "1.0.0",
+    "displayName": " UnityExtensions.DependencyInjection",
+    "author": {
+        "name": "Kurai András",
+        "email": "k.andras9642@gmail.com",
+        "url": "https://github.com/KuraiAndras/ UnityExtensions.DependencyInjection"
+    }
+}
