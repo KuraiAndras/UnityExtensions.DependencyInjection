@@ -22,48 +22,53 @@ namespace UnityExtensions.DependencyInjection
             }
         }
 
-        private IServiceScope InjectIntoType(Type type, object instance)
-        {
-            if (type is null) throw new ArgumentNullException(nameof(type));
-            if (instance is null) throw new ArgumentNullException(nameof(instance));
-
-            var scope = _serviceProvider.CreateScope();
-
-            foreach (var field in type
-                .GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                .Where(TypeExtensions.MemberHasInjectAttribute))
-            {
-                field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
-            }
-
-            foreach (var property in type
-                .GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                .Where(TypeExtensions.MemberHasInjectAttribute))
-            {
-                property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
-            }
-
-            foreach (var method in type
-                .GetParentTypes()
-                .Concat(new[] { type })
-                .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                .Where(TypeExtensions.MemberHasInjectAttribute))
-            {
-                var methodParameters = method.GetParameters();
-                var parameters = new object[methodParameters.Length];
-                for (var i = 0; i < methodParameters.Length; i++)
-                {
-                    parameters[i] = scope.ServiceProvider.GetService(methodParameters[i].ParameterType);
-                }
-
-                method.Invoke(instance, parameters);
-            }
-
-            return scope;
-        }
-
         public void InjectIntoGameObject(GameObject gameObjectInstance)
         {
+            IServiceScope InjectIntoType(Type type, object instance)
+            {
+                if (type is null) throw new ArgumentNullException(nameof(type));
+                if (instance is null) throw new ArgumentNullException(nameof(instance));
+
+                var didInstantiate = false;
+
+                var scope = _serviceProvider.CreateScope();
+
+                foreach (var field in type
+                    .GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                {
+                    field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
+                    didInstantiate = true;
+                }
+
+                foreach (var property in type
+                    .GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                {
+                    property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                    didInstantiate = true;
+                }
+
+                foreach (var method in type
+                    .GetParentTypes()
+                    .Concat(new[] { type })
+                    .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                {
+                    var methodParameters = method.GetParameters();
+                    var parameters = new object[methodParameters.Length];
+                    for (var i = 0; i < methodParameters.Length; i++)
+                    {
+                        parameters[i] = scope.ServiceProvider.GetService(methodParameters[i].ParameterType);
+                        didInstantiate = true;
+                    }
+
+                    method.Invoke(instance, parameters);
+                }
+
+                return didInstantiate ? scope : null;
+            }
+
             if (gameObjectInstance is null) throw new ArgumentNullException(nameof(gameObjectInstance));
 
             var componentsToInject = gameObjectInstance
@@ -74,7 +79,7 @@ namespace UnityExtensions.DependencyInjection
             {
                 var instanceScope = InjectIntoType(type, instance);
 
-                componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
+                if (!(instanceScope is null)) componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
         }
     }
