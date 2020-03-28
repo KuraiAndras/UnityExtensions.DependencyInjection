@@ -14,7 +14,7 @@ namespace UnityExtensions.DependencyInjection
 
         internal void InitializeScene(IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             foreach (var rootGameObject in SceneManager.GetActiveScene().GetRootGameObjects())
             {
@@ -24,18 +24,21 @@ namespace UnityExtensions.DependencyInjection
 
         private IServiceScope InjectIntoType(Type type, object instance)
         {
+            if (type is null) throw new ArgumentNullException(nameof(type));
+            if (instance is null) throw new ArgumentNullException(nameof(instance));
+
             var scope = _serviceProvider.CreateScope();
 
             foreach (var field in type
                 .GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                .Where(MemberContainsInjectAttribute))
+                .Where(TypeExtensions.MemberHasInjectAttribute))
             {
                 field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
             }
 
             foreach (var property in type
                 .GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                .Where(MemberContainsInjectAttribute))
+                .Where(TypeExtensions.MemberHasInjectAttribute))
             {
                 property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
             }
@@ -44,7 +47,7 @@ namespace UnityExtensions.DependencyInjection
                 .GetParentTypes()
                 .Concat(new[] { type })
                 .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                .Where(MemberContainsInjectAttribute))
+                .Where(TypeExtensions.MemberHasInjectAttribute))
             {
                 var methodParameters = method.GetParameters();
                 var parameters = new object[methodParameters.Length];
@@ -61,6 +64,8 @@ namespace UnityExtensions.DependencyInjection
 
         public void InjectIntoGameObject(GameObject gameObjectInstance)
         {
+            if (gameObjectInstance is null) throw new ArgumentNullException(nameof(gameObjectInstance));
+
             var componentsToInject = gameObjectInstance
                 .GetComponentsInChildren(typeof(MonoBehaviour), true)
                 .Select(c => (c.GetType(), (object)c, c.gameObject));
@@ -72,7 +77,5 @@ namespace UnityExtensions.DependencyInjection
                 componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
         }
-
-        private static bool MemberContainsInjectAttribute<T>(T memberInfo) where T : MemberInfo => memberInfo.GetCustomAttributes<InjectAttribute>().Any();
     }
 }

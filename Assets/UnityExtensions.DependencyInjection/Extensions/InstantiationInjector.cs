@@ -4,7 +4,7 @@ using Object = UnityEngine.Object;
 
 namespace UnityExtensions.DependencyInjection.Extensions
 {
-    public static class ServiceCollectionExtensions
+    public static class InstantiationInjector
     {
         public static IServiceCollection AddInstantiation(this IServiceCollection services)
         {
