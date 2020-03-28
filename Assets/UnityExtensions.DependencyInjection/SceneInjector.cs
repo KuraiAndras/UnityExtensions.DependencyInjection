@@ -8,21 +8,13 @@ using UnityExtensions.DependencyInjection.Extensions;
 
 namespace UnityExtensions.DependencyInjection
 {
-    public sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
+    internal sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
     {
         private IServiceProvider _serviceProvider;
 
-        [SerializeField] private Injector _injector;
-
-        private void Awake()
+        internal void InitializeScene(IServiceProvider serviceProvider)
         {
-            var collection = new ServiceCollection();
-
-            _injector.AddInjections(collection);
-
-            collection.AddSingleton<IGameObjectInjector>(this);
-
-            _serviceProvider = collection.BuildServiceProvider();
+            _serviceProvider = serviceProvider;
 
             foreach (var rootGameObject in SceneManager.GetActiveScene().GetRootGameObjects())
             {
@@ -77,7 +69,7 @@ namespace UnityExtensions.DependencyInjection
             {
                 var instanceScope = InjectIntoType(type, instance);
 
-                gameObjectInstance.AddComponent<DestroyDetector>().Scope = instanceScope;
+                gameObjectInstance.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
         }
 
