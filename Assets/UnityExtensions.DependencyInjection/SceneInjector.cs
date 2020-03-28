@@ -8,11 +8,11 @@ using UnityExtensions.DependencyInjection.Extensions;
 
 namespace UnityExtensions.DependencyInjection
 {
-    internal sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
+    public sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
     {
         private IServiceProvider _serviceProvider;
 
-        internal void InitializeScene(IServiceProvider serviceProvider)
+        public void InitializeScene(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 

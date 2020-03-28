@@ -1,3 +1,13 @@
-﻿{
-	"name": "UnityExtensions.DependencyInjection"
+{
+    "name": "UnityExtensions.DependencyInjection",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
