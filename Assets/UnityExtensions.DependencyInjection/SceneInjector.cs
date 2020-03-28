@@ -63,13 +63,13 @@ namespace UnityExtensions.DependencyInjection
         {
             var componentsToInject = gameObjectInstance
                 .GetComponentsInChildren(typeof(MonoBehaviour), true)
-                .Select(c => (type: c.GetType(), instance: (object)c));
+                .Select(c => (c.GetType(), (object)c, c.gameObject));
 
-            foreach (var (type, instance) in componentsToInject)
+            foreach (var (type, instance, componentGameObject) in componentsToInject)
             {
                 var instanceScope = InjectIntoType(type, instance);
 
-                gameObjectInstance.AddComponent<DestroyDetector>().Disposable = instanceScope;
+                componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
         }
 
