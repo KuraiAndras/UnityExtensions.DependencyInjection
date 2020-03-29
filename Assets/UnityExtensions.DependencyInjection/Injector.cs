@@ -5,6 +5,10 @@ using UnityExtensions.DependencyInjection.Extensions;
 
 namespace UnityExtensions.DependencyInjection
 {
+    /// <summary>
+    /// Has execution order : -999
+    /// </summary>
+    [DefaultExecutionOrder(-999)]
     [RequireComponent(typeof(SceneInjector))]
     public abstract class Injector : MonoBehaviour
     {
@@ -12,7 +16,7 @@ namespace UnityExtensions.DependencyInjection
 
         protected Injector() => ServiceProvider = Services.BuildServiceProvider() ?? DefaultServiceCollection.BuildServiceProvider();
 
-        protected IServiceCollection Services { get; set; } = new ServiceCollection().AddInstantiation();
+        protected IServiceCollection Services { get; set; } = DefaultServiceCollection;
         protected IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
@@ -24,6 +28,9 @@ namespace UnityExtensions.DependencyInjection
         /// </summary>
         protected virtual void Startup() => GetComponent<SceneInjector>().InitializeScene(ServiceProvider);
 
-        private void Awake() => Startup();
+        /// <summary>
+        /// Calls Startup
+        /// </summary>
+        protected virtual void Awake() => Startup();
     }
 }

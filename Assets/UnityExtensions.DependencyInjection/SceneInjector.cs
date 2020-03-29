@@ -33,25 +33,28 @@ namespace UnityExtensions.DependencyInjection
 
                 var scope = _serviceProvider.CreateScope();
 
-                foreach (var field in type
-                    .GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                var allTypes = type
+                    .GetParentTypes()
+                    .Concat(new[] { type })
+                    .ToList();
+
+                foreach (var field in allTypes
+                    .SelectMany(t => t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .Where(TypeExtensions.MemberHasInjectAttribute))
                 {
                     field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
                     didInstantiate = true;
                 }
 
-                foreach (var property in type
-                    .GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                foreach (var property in allTypes
+                    .SelectMany(t => t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .Where(TypeExtensions.MemberHasInjectAttribute))
                 {
                     property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
                     didInstantiate = true;
                 }
 
-                foreach (var method in type
-                    .GetParentTypes()
-                    .Concat(new[] { type })
+                foreach (var method in allTypes
                     .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .Where(TypeExtensions.MemberHasInjectAttribute))
                 {
