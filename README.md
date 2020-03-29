@@ -59,9 +59,21 @@ public class ExampleScript : MonoBehaviour
 }
 ```
 
-Supported injection methods: Field, Property, Method. Injection happens in this order.
+Supported injection methods for InjectAttribute: Field, Property, Method. Injection happens in this order.
 
-The Injector.Startup is the first Awake that is called when the scene starts up.
+Regular classes (not inheriting from MonoBehavior) can't use the InjectAttribute. For those cases use constructor injection.
+
+```c#
+public class ExampleService : IExampleService
+{
+    public ExampleService(IOtherService service)
+    {
+        // Implementation
+    }
+}
+```
+
+The Injector class has a Script Execution Order of: -999 making it (and its subtypes) the first (unless other script is set bellow -999) one to be called in lifecycle events. Injector.Startup is called in the implementation of Injector.Awake.
 
 Injecting into prefabs:
 ```c#
