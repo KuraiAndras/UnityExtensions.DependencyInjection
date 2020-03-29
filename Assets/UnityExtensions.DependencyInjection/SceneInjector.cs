@@ -50,7 +50,15 @@ namespace UnityExtensions.DependencyInjection
                     .SelectMany(t => t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
                     .Where(TypeExtensions.MemberHasInjectAttribute))
                 {
-                    property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                    if (property.CanWrite)
+                    {
+                        property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                    }
+                    else
+                    {
+                        // TODO: set backing field
+                    }
+
                     didInstantiate = true;
                 }
 
