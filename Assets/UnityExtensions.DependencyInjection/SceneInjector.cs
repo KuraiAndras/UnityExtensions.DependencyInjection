@@ -23,7 +23,7 @@ namespace UnityExtensions.DependencyInjection
             }
         }
 
-        public void InjectIntoGameObject(GameObject gameObjectInstance)
+        public GameObject InjectIntoGameObject(GameObject gameObjectInstance)
         {
             if (gameObjectInstance is null) throw new ArgumentNullException(nameof(gameObjectInstance));
 
@@ -39,52 +39,24 @@ namespace UnityExtensions.DependencyInjection
 
                 componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
+
+            return gameObjectInstance;
         }
 
-        public GameObject Instantiate(GameObject original)
-        {
-            var go = Object.Instantiate(original);
+        public GameObject Instantiate(GameObject original) =>
+            InjectIntoGameObject(Object.Instantiate(original));
 
-            InjectIntoGameObject(gameObject);
+        public GameObject Instantiate(GameObject original, Transform parent) =>
+            InjectIntoGameObject(Object.Instantiate(original, parent));
 
-            return go;
-        }
+        public GameObject Instantiate(GameObject original, Transform parent, bool instantiateInWorldSpace) =>
+            InjectIntoGameObject(Object.Instantiate(original, parent, instantiateInWorldSpace));
 
-        public GameObject Instantiate(GameObject original, Transform parent)
-        {
-            var go = Object.Instantiate(original, parent);
+        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation) =>
+            InjectIntoGameObject(Object.Instantiate(original, position, rotation));
 
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
-
-        public GameObject Instantiate(GameObject original, Transform parent, bool instantiateInWorldSpace)
-        {
-            var go = Object.Instantiate(original, parent, instantiateInWorldSpace);
-
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation)
-        {
-            var go = Object.Instantiate(original, position, rotation);
-
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent)
-        {
-            var go = Object.Instantiate(original, position, rotation, parent);
-
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
+        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent) =>
+            InjectIntoGameObject(Object.Instantiate(original, position, rotation, parent));
 
         private IServiceScope InjectIntoType(Type type, object instance)
         {
