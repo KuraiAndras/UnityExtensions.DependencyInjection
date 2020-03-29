@@ -7,6 +7,27 @@ namespace UnityExtensions.DependencyInjection.Extensions
 {
     internal static class TypeExtensions
     {
+        internal static bool IsAutoProperty(this PropertyInfo property)
+        {
+            if (property is null) throw new ArgumentNullException(nameof(property));
+
+            return property
+                       .DeclaringType
+                       ?.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+                       .Any(f => f.Name.Contains("<" + property.Name + ">"))
+                   ?? false;
+        }
+
+        internal static FieldInfo GetAutoPropertyBackingField(this PropertyInfo property)
+        {
+            if (property is null) throw new ArgumentNullException(nameof(property));
+
+            return property
+                .DeclaringType
+                ?.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+                .Single(f => f.Name.Contains("<" + property.Name + ">"));
+        }
+
         internal static bool MemberHasInjectAttribute<T>(this T memberInfo) where T : MemberInfo
         {
             if (memberInfo is null) throw new ArgumentNullException(nameof(memberInfo));

@@ -40,7 +40,8 @@ namespace UnityExtensions.DependencyInjection
 
                 foreach (var field in allTypes
                     .SelectMany(t => t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                    .Where(TypeExtensions.MemberHasInjectAttribute)
+                    .Distinct())
                 {
                     field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
                     didInstantiate = true;
@@ -48,23 +49,25 @@ namespace UnityExtensions.DependencyInjection
 
                 foreach (var property in allTypes
                     .SelectMany(t => t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                    .Where(TypeExtensions.MemberHasInjectAttribute)
+                    .Distinct())
                 {
                     if (property.CanWrite)
                     {
                         property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                        didInstantiate = true;
                     }
-                    else
+                    else if (property.IsAutoProperty())
                     {
-                        // TODO: set backing field
+                        property.GetAutoPropertyBackingField().SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                        didInstantiate = true;
                     }
-
-                    didInstantiate = true;
                 }
 
                 foreach (var method in allTypes
                     .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                    .Where(TypeExtensions.MemberHasInjectAttribute)
+                    .Distinct())
                 {
                     var methodParameters = method.GetParameters();
                     var parameters = new object[methodParameters.Length];

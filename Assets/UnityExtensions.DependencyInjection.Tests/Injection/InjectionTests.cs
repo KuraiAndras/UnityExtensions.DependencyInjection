@@ -20,9 +20,9 @@ namespace UnityExtensions.DependencyInjection.Tests.Injection
             yield return null;
 
             // Assert
-            var logger = Object.FindObjectOfType<AwakeLogger>();
-            Assert.AreEqual(logger.CallerTypes.Count, 6);
-            Assert.AreEqual(logger.CallerTypes[0], typeof(AwakeCalledFirstInjector));
+            var sut = Object.FindObjectOfType<AwakeLogger>();
+            Assert.AreEqual(sut.CallerTypes.Count, 6);
+            Assert.AreEqual(sut.CallerTypes[0], typeof(AwakeCalledFirstInjector));
         }
 
         [UnityTest]
