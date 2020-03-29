@@ -8,11 +8,11 @@ using UnityExtensions.DependencyInjection.Extensions;
 
 namespace UnityExtensions.DependencyInjection
 {
-    internal sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
+    public sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
     {
         private IServiceProvider _serviceProvider;
 
-        internal void InitializeScene(IServiceProvider serviceProvider)
+        public void InitializeScene(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
@@ -33,27 +33,41 @@ namespace UnityExtensions.DependencyInjection
 
                 var scope = _serviceProvider.CreateScope();
 
-                foreach (var field in type
-                    .GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                var allTypes = type
+                    .GetParentTypes()
+                    .Concat(new[] { type })
+                    .ToList();
+
+                foreach (var field in allTypes
+                    .SelectMany(t => t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                    .Where(TypeExtensions.MemberHasInjectAttribute)
+                    .Distinct())
                 {
                     field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
                     didInstantiate = true;
                 }
 
-                foreach (var property in type
-                    .GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                foreach (var property in allTypes
+                    .SelectMany(t => t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                    .Where(TypeExtensions.MemberHasInjectAttribute)
+                    .Distinct())
                 {
-                    property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
-                    didInstantiate = true;
+                    if (property.CanWrite)
+                    {
+                        property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                        didInstantiate = true;
+                    }
+                    else if (property.IsAutoProperty())
+                    {
+                        property.GetAutoPropertyBackingField().SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                        didInstantiate = true;
+                    }
                 }
 
-                foreach (var method in type
-                    .GetParentTypes()
-                    .Concat(new[] { type })
+                foreach (var method in allTypes
                     .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
-                    .Where(TypeExtensions.MemberHasInjectAttribute))
+                    .Where(TypeExtensions.MemberHasInjectAttribute)
+                    .Distinct())
                 {
                     var methodParameters = method.GetParameters();
                     var parameters = new object[methodParameters.Length];
@@ -79,7 +93,9 @@ namespace UnityExtensions.DependencyInjection
             {
                 var instanceScope = InjectIntoType(type, instance);
 
-                if (!(instanceScope is null)) componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
+                if (instanceScope is null) continue;
+
+                componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
         }
     }
