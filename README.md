@@ -6,9 +6,9 @@ Unity supports this package up to 2.2.0. The dlls are included in the package
 
 ## Why?
 
-If you use .net standard libraries in you unity project, and they already rely on dependency injection then using them in unity is rather cumbersome.
+If you use .net standard libraries in your unity project, and they already rely on dependency injection then using them in unity is rather cumbersome.
 
-One option would be to use an already existing DI framework in unity, and translate you injection into that container, but it sometimes is not viable. Also most libraries have different opinions on DI. By relying on the Microsoft provided package all your libraries can have the same abstraction for DI.
+One option would be to use an already existing DI framework in unity, and translate your injection into that container, but it sometimes is not viable. Also most libraries have different opinions on DI. By relying on the Microsoft provided package all your libraries can have the same abstraction for DI.
 
 ## Resources on DI
 
