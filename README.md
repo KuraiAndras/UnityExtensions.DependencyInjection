@@ -74,7 +74,7 @@ IGameObjectInjector gameObjectInjector = ;
 
 // Instantiate the usual way
 var instance = GameObject.Instantiate(prefab);
-// Inject int freshly created GameObject
+// Inject into freshly created GameObject
 gameObjectInjector.InjectIntoGameObject(instance);
 
 // Or:
@@ -88,4 +88,4 @@ You don't have to call InjectIntoGameObject on prefab children. When InjectIntoG
 ## Disposables
 
  - An IServiceScope is created for every script found in a GameObject.
- - A DestoryDetector script is added to the containing GameObject every time when a script gets injected. When the GameObject containing the script is destroyed the scope associated with the injection target is disposed.
+ - A DestroyDetector script is added to the containing GameObject every time when a script gets injected. When the GameObject containing the script is destroyed the scope associated with the injection target is disposed.
