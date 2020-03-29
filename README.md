@@ -97,7 +97,10 @@ var instance = gameObjectInjector.Instantiate(prefab); // Prefab is created and 
 You don't have to call InjectIntoGameObject on prefab children. When InjectIntoGameObject is called all the scripts on the game object and it's children which have the InjectAttribute gets injected.
 
 
-## Disposables
+## Scopes, Disposables
 
  - An IServiceScope is created for every script found in a GameObject.
+ - Thus each MonoBehavior injected has it's own scope (Scoped lifetime services start from here)
  - A DestroyDetector script is added to the containing GameObject every time when a script gets injected. When the GameObject containing the script is destroyed the scope associated with the injection target is disposed.
+ - DestroyDetector is internal, and is hidden in the Inspector.
+ - Example: Player GameObject has 3 scripts which all have some dependencies implementing IDisposable. 3 DestroyDetector script gets added to Player (for each injected script). When Player is destroyed all scoped and transient services which implement IDisposable are disposed.
