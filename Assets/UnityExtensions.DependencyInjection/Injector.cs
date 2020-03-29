@@ -17,6 +17,10 @@ namespace UnityExtensions.DependencyInjection
         protected Injector() => ServiceProvider = Services.BuildServiceProvider() ?? DefaultServiceCollection.BuildServiceProvider();
 
         protected IServiceCollection Services { get; set; } = DefaultServiceCollection;
+
+        /// <summary>
+        /// Set to initialize services
+        /// </summary>
         protected IServiceProvider ServiceProvider { get; set; }
 
         /// <summary>
