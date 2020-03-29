@@ -4,6 +4,12 @@ A simple library to use the Microsoft.Extensions.DependencyInjection library.
 
 Unity supports this package up to 2.2.0. The dlls are included in the package
 
+## Why?
+
+If you use .net standard libraries in you unity project, and they already rely on dependency injection then using them in unity is rather cumbersome.
+
+One option would be to use an already existing DI framework in unity, and translate you injection into that container, but it sometimes is not viable. Also most libraries have different opinions on DI. By relying on the Microsoft provided package all your libraries can have the same abstraction for DI.
+
 ## Usage
 
 Create a class that inherits from Injector:
@@ -58,11 +64,20 @@ GameObject prefab = ;
 // IGameObjectInjector is a service added by default to Services
 IGameObjectInjector gameObjectInjector = ;
 
-var instance = GameObject.Instantiate(prefab);
+// Either:
 
+// Instantiate the usual way
+var instance = GameObject.Instantiate(prefab);
+// Inject int freshly created GameObject
 gameObjectInjector.InjectIntoGameObject(instance);
 
+// Or:
+
+// Use IGameObjectInjector which wraps GameObject.Instantiate(...) methods
+var instance = gameObjectInjector.Instantiate(prefab); // Prefab is created and injected
 ```
+You don't have to call InjectIntoGameObject on prefab children. When InjectIntoGameObject is called all the scripts on the game object and it's children which have the InjectAttribute gets injected.
+
 
 ## Disposables
 
