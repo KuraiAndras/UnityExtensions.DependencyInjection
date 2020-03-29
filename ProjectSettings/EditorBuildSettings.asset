@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/UnityExtensions.DependencyInjection.Tests/Scenes/TestScene.unity
+    path: Assets/UnityExtensions.DependencyInjection.Tests/Scenes/InjectorAwakeCalledFirst.unity
     guid: 5b131de8acbeb2a4ca21d7e71f20c503
   m_configObjects: {}

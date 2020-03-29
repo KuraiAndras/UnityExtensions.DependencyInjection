@@ -12,7 +12,7 @@ namespace UnityExtensions.DependencyInjection
     [RequireComponent(typeof(SceneInjector))]
     public abstract class Injector : MonoBehaviour
     {
-        private static IServiceCollection DefaultServiceCollection => new ServiceCollection().AddInstantiation();
+        private static readonly IServiceCollection DefaultServiceCollection = new ServiceCollection().AddInstantiation();
 
         protected Injector() => ServiceProvider = Services.BuildServiceProvider() ?? DefaultServiceCollection.BuildServiceProvider();
 

@@ -82,7 +82,9 @@ namespace UnityExtensions.DependencyInjection
             {
                 var instanceScope = InjectIntoType(type, instance);
 
-                if (!(instanceScope is null)) componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
+                if (instanceScope is null) continue;
+
+                componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
         }
     }
