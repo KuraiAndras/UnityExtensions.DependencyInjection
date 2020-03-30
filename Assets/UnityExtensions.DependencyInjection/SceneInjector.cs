@@ -23,7 +23,7 @@ namespace UnityExtensions.DependencyInjection
             }
         }
 
-        public void InjectIntoGameObject(GameObject gameObjectInstance)
+        public GameObject InjectIntoGameObject(GameObject gameObjectInstance)
         {
             if (gameObjectInstance is null) throw new ArgumentNullException(nameof(gameObjectInstance));
 
@@ -39,52 +39,24 @@ namespace UnityExtensions.DependencyInjection
 
                 componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
             }
+
+            return gameObjectInstance;
         }
 
-        public GameObject Instantiate(GameObject original)
-        {
-            var go = Object.Instantiate(original);
+        public GameObject Instantiate(GameObject original) =>
+            InjectIntoGameObject(Object.Instantiate(original));
 
-            InjectIntoGameObject(gameObject);
+        public GameObject Instantiate(GameObject original, Transform parent) =>
+            InjectIntoGameObject(Object.Instantiate(original, parent));
 
-            return go;
-        }
+        public GameObject Instantiate(GameObject original, Transform parent, bool instantiateInWorldSpace) =>
+            InjectIntoGameObject(Object.Instantiate(original, parent, instantiateInWorldSpace));
 
-        public GameObject Instantiate(GameObject original, Transform parent)
-        {
-            var go = Object.Instantiate(original, parent);
+        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation) =>
+            InjectIntoGameObject(Object.Instantiate(original, position, rotation));
 
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
-
-        public GameObject Instantiate(GameObject original, Transform parent, bool instantiateInWorldSpace)
-        {
-            var go = Object.Instantiate(original, parent, instantiateInWorldSpace);
-
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation)
-        {
-            var go = Object.Instantiate(original, position, rotation);
-
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent)
-        {
-            var go = Object.Instantiate(original, position, rotation, parent);
-
-            InjectIntoGameObject(gameObject);
-
-            return go;
-        }
+        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent) =>
+            InjectIntoGameObject(Object.Instantiate(original, position, rotation, parent));
 
         private IServiceScope InjectIntoType(Type type, object instance)
         {
@@ -101,33 +73,33 @@ namespace UnityExtensions.DependencyInjection
                 .ToList();
 
             foreach (var field in allTypes
-                .SelectMany(t => t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .SelectMany(t => t.GetFields(InstanceBindingFlags))
                 .Where(TypeExtensions.MemberHasInjectAttribute)
                 .Distinct())
             {
-                field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
+                field.SetValue(instance, GetService(scope, field.FieldType));
                 didInstantiate = true;
             }
 
             foreach (var property in allTypes
-                .SelectMany(t => t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .SelectMany(t => t.GetProperties(InstanceBindingFlags))
                 .Where(TypeExtensions.MemberHasInjectAttribute)
                 .Distinct())
             {
                 if (property.CanWrite)
                 {
-                    property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                    property.SetValue(instance, GetService(scope, property.PropertyType));
                     didInstantiate = true;
                 }
                 else if (property.IsAutoProperty())
                 {
-                    property.GetAutoPropertyBackingField().SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                    property.GetAutoPropertyBackingField().SetValue(instance, GetService(scope, property.PropertyType));
                     didInstantiate = true;
                 }
             }
 
             foreach (var method in allTypes
-                .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .SelectMany(t => t.GetMethods(InstanceBindingFlags))
                 .Where(TypeExtensions.MemberHasInjectAttribute)
                 .Distinct())
             {
@@ -144,5 +116,9 @@ namespace UnityExtensions.DependencyInjection
 
             return didInstantiate ? scope : null;
         }
+
+        private static object GetService(IServiceScope scope, Type memberType) => scope.ServiceProvider.GetService(memberType);
+
+        private static BindingFlags InstanceBindingFlags => BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
     }
 }
