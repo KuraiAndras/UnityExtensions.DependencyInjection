@@ -68,6 +68,42 @@ namespace UnityExtensions.DependencyInjection
             return didInstantiate ? scope : null;
         }
 
+        private (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos) GetMembers(Type type)
+        {
+            var allTypes = type
+                .GetAllTypes()
+                .ToList();
+
+            if (!_options.UseCaching) return GetMembersInternal(allTypes);
+
+            if (!_resolveDictionary.TryGetValue(type, out var members))
+            {
+                members = GetMembersInternal(allTypes);
+                _resolveDictionary.TryAdd(type, members);
+            }
+
+            return members;
+        }
+
+        private static (FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods) GetMembersInternal(IReadOnlyCollection<Type> allTypes)
+        {
+            const BindingFlags instanceBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+
+            var fieldsToInject = allTypes
+                .SelectMany(t => t.GetFields(instanceBindingFlags))
+                .FilterMembersToArray();
+
+            var propertiesToInject = allTypes
+                .SelectMany(t => t.GetProperties(instanceBindingFlags))
+                .FilterMembersToArray();
+
+            var methodsToInject = allTypes
+                .SelectMany(t => t.GetMethods(instanceBindingFlags))
+                .FilterMembersToArray();
+
+            return (fieldsToInject, propertiesToInject, methodsToInject);
+        }
+
         private static bool Inject(object instance, IServiceScope scope, PropertyInfo property)
         {
             if (property.CanWrite)
@@ -105,41 +141,5 @@ namespace UnityExtensions.DependencyInjection
         }
 
         private static object GetService(IServiceScope scope, Type memberType) => scope.ServiceProvider.GetService(memberType);
-
-        private (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos) GetMembers(Type type)
-        {
-            var allTypes = type
-                .GetAllTypes()
-                .ToList();
-
-            if (!_options.UseCaching) return GetMembersInternal(allTypes);
-
-            if (!_resolveDictionary.TryGetValue(type, out var members))
-            {
-                members = GetMembersInternal(allTypes);
-                _resolveDictionary.TryAdd(type, members);
-            }
-
-            return members;
-        }
-
-        private static (FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods) GetMembersInternal(IReadOnlyCollection<Type> allTypes)
-        {
-            const BindingFlags instanceBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-
-            var fieldsToInject = allTypes
-                .SelectMany(t => t.GetFields(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            var propertiesToInject = allTypes
-                .SelectMany(t => t.GetProperties(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            var methodsToInject = allTypes
-                .SelectMany(t => t.GetMethods(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            return (fieldsToInject, propertiesToInject, methodsToInject);
-        }
     }
 }
