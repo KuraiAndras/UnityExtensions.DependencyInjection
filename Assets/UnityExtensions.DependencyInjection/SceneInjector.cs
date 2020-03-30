@@ -21,6 +21,8 @@ namespace UnityExtensions.DependencyInjection
 
         public void InitializeScene(IServiceProvider serviceProvider, Action<SceneInjectorOptions> optionsBuilder = default)
         {
+            if (_serviceProvider is ServiceProvider sp) sp.Dispose();
+
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             optionsBuilder?.Invoke(_options);
@@ -49,6 +51,11 @@ namespace UnityExtensions.DependencyInjection
             }
 
             return gameObjectInstance;
+        }
+
+        private void OnDestroy()
+        {
+            if (_serviceProvider is ServiceProvider sp) sp.Dispose();
         }
 
         private IServiceScope InjectIntoType(Type type, object instance)
