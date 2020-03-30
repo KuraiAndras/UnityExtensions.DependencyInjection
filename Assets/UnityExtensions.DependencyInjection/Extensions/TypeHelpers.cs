@@ -71,15 +71,14 @@ namespace UnityExtensions.DependencyInjection.Extensions
 #endif
         }
 
-        public static IEnumerable<T> FilterMembers<T>(this IEnumerable<T> members) where T : MemberInfo => members.Where(MemberHasInjectAttribute).Distinct();
+        public static T[] FilterMembersToArray<T>(this IEnumerable<T> members) where T : MemberInfo => members.Where(MemberHasInjectAttribute).Distinct().ToArray();
 
-        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        public static void ForEach<T>(this T[] source, Action<T> action)
         {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (action == null) throw new ArgumentNullException(nameof(action));
-
-            foreach (var element in source)
-                action(element);
+            for (var i = 0; i < source.Length; i++)
+            {
+                action(source[i]);
+            }
         }
     }
 }

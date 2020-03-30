@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -13,8 +12,8 @@ namespace UnityExtensions.DependencyInjection
 {
     public sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
     {
-        private readonly ConcurrentDictionary<Type, (List<FieldInfo> fieldInfos, List<PropertyInfo> propertyInfos, List<MethodInfo> methodInfos)> _resolveDictionary =
-            new ConcurrentDictionary<Type, (List<FieldInfo>, List<PropertyInfo>, List<MethodInfo>)>();
+        private readonly ConcurrentDictionary<Type, (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos)> _resolveDictionary =
+            new ConcurrentDictionary<Type, (FieldInfo[], PropertyInfo[], MethodInfo[])>();
 
         private IServiceProvider _serviceProvider;
 
@@ -78,18 +77,15 @@ namespace UnityExtensions.DependencyInjection
 
                 var fieldsToInject = allTypes
                     .SelectMany(t => t.GetFields(InstanceBindingFlags))
-                    .FilterMembers()
-                    .ToList();
+                    .FilterMembersToArray();
 
                 var propertiesToInject = allTypes
                     .SelectMany(t => t.GetProperties(InstanceBindingFlags))
-                    .FilterMembers()
-                    .ToList();
+                    .FilterMembersToArray();
 
                 var methodsToInject = allTypes
                     .SelectMany(t => t.GetMethods(InstanceBindingFlags))
-                    .FilterMembers()
-                    .ToList();
+                    .FilterMembersToArray();
 
                 _resolveDictionary.TryAdd(type, (fieldsToInject, propertiesToInject, methodsToInject));
             }
