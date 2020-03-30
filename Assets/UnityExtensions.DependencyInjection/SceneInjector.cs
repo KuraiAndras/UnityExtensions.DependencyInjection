@@ -73,33 +73,33 @@ namespace UnityExtensions.DependencyInjection
                 .ToList();
 
             foreach (var field in allTypes
-                .SelectMany(t => t.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .SelectMany(t => t.GetFields(InstanceBindingFlags))
                 .Where(TypeExtensions.MemberHasInjectAttribute)
                 .Distinct())
             {
-                field.SetValue(instance, scope.ServiceProvider.GetService(field.FieldType));
+                field.SetValue(instance, GetService(scope, field.FieldType));
                 didInstantiate = true;
             }
 
             foreach (var property in allTypes
-                .SelectMany(t => t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .SelectMany(t => t.GetProperties(InstanceBindingFlags))
                 .Where(TypeExtensions.MemberHasInjectAttribute)
                 .Distinct())
             {
                 if (property.CanWrite)
                 {
-                    property.SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                    property.SetValue(instance, GetService(scope, property.PropertyType));
                     didInstantiate = true;
                 }
                 else if (property.IsAutoProperty())
                 {
-                    property.GetAutoPropertyBackingField().SetValue(instance, scope.ServiceProvider.GetService(property.PropertyType));
+                    property.GetAutoPropertyBackingField().SetValue(instance, GetService(scope, property.PropertyType));
                     didInstantiate = true;
                 }
             }
 
             foreach (var method in allTypes
-                .SelectMany(t => t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+                .SelectMany(t => t.GetMethods(InstanceBindingFlags))
                 .Where(TypeExtensions.MemberHasInjectAttribute)
                 .Distinct())
             {
@@ -116,5 +116,9 @@ namespace UnityExtensions.DependencyInjection
 
             return didInstantiate ? scope : null;
         }
+
+        private static object GetService(IServiceScope scope, Type memberType) => scope.ServiceProvider.GetService(memberType);
+
+        private static BindingFlags InstanceBindingFlags => BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
     }
 }
