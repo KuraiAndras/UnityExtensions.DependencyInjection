@@ -12,7 +12,7 @@ namespace UnityExtensions.DependencyInjection.Tests.Arrange.DisposeIsCalledOnDes
             Services.AddSingleton<IListenToDispose, ListenToDispose>(_ => FindObjectOfType<ListenToDispose>());
             Services.AddTransient<ITestDisposable, TestDisposable>();
 
-            return Services.BuildServiceProvider();
+            return base.CreateServiceProvider();
         }
     }
 }

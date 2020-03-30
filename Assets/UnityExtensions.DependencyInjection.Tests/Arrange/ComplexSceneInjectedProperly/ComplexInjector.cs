@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace UnityExtensions.DependencyInjection.Tests.Arrange.ComplexSceneInjectedProperly
@@ -11,7 +10,7 @@ namespace UnityExtensions.DependencyInjection.Tests.Arrange.ComplexSceneInjected
         {
             Services.AddComplexInjection();
 
-            return Services.BuildServiceProvider();
+            return base.CreateServiceProvider();
         }
     }
 }
