@@ -21,9 +21,13 @@ One option would be to use an already existing DI framework in unity, and transl
 
 Create a class that inherits from Injector:
 ```c#
+// Customize script execution order, so Awake is called first in you scene
+// Usually -999 works nicely
+[DefaultExecutionOrder(-999)]
 public sealed class ExampleInjector : Injector
 {
-    protected override void Startup()
+    // Override CreateServiceProvider to add service registrations
+    protected override IServiceProvider CreateServiceProvider()
     {
         // Use the usual IServiceCollection methods
         Services.AddTransient<IExampleService, ExampleService>();
@@ -31,11 +35,24 @@ public sealed class ExampleInjector : Injector
         // Resolve scripts already in the scene with FindObjectOfType()
         Services.AddSingleton<MonoBehaviourService>(_ => GameObject.FindObjectOfType<MonoBehaviourService>());
 
-        // Set the ServiceProvider
-        ServiceProvider = Services.BuildServiceProvider();
+        // Either:
 
-        // Don't forget to call base at some point
-        base.Startup();
+        // Return a built ServiceProvider
+        return Services.BuildServiceProvider();
+
+        // Or:
+
+        // Call base. Base does: Services.BuildServiceProvider()
+        return base.CreateServiceProvider();
+    }
+
+    // Override Awake to customize startup
+    // Base by default does: GetComponent<SceneInjector>().InitializeScene(CreateServiceProvider())
+    protected override void Awake()
+    {
+        // Put your startup logic here.
+        base.Awake();
+        // Put startup logic needing initialized scene here
     }
 }
 ```
@@ -105,3 +122,6 @@ You don't have to call InjectIntoGameObject on prefab children. When InjectIntoG
  - A DestroyDetector script is added to the containing GameObject every time when a script gets injected. When the GameObject containing the script is destroyed the scope associated with the injection target is disposed.
  - DestroyDetector is internal, and is hidden in the Inspector.
  - Example: Player GameObject has 3 scripts which all have some dependencies implementing IDisposable. 3 DestroyDetector script gets added to Player (for each injected script). When Player is destroyed all scoped and transient services which implement IDisposable are disposed.
+
+ ## Notes
+  - To see sample usage check out tests and test scenes

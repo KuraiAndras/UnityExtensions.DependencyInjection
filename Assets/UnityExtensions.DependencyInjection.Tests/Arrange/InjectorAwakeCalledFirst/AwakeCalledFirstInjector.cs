@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace UnityExtensions.DependencyInjection.Tests.Arrange.InjectorAwakeCalledFirst
@@ -13,7 +12,7 @@ namespace UnityExtensions.DependencyInjection.Tests.Arrange.InjectorAwakeCalledF
         {
             _logger.CallerTypes.Add(GetType());
 
-            return Services.BuildServiceProvider();
+            return base.CreateServiceProvider();
         }
     }
 }
