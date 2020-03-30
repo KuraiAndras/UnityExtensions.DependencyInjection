@@ -7,11 +7,10 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityExtensions.DependencyInjection.Extensions;
-using Object = UnityEngine.Object;
 
 namespace UnityExtensions.DependencyInjection
 {
-    public sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
+    public sealed class SceneInjector : MonoBehaviour, ISceneInjector
     {
         private readonly ConcurrentDictionary<Type, (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos)> _resolveDictionary =
             new ConcurrentDictionary<Type, (FieldInfo[], PropertyInfo[], MethodInfo[])>();
@@ -51,20 +50,6 @@ namespace UnityExtensions.DependencyInjection
 
             return gameObjectInstance;
         }
-
-        public GameObject Instantiate(GameObject original) => InjectIntoGameObject(Object.Instantiate(original));
-
-        public GameObject Instantiate(GameObject original, Transform parent) =>
-            InjectIntoGameObject(Object.Instantiate(original, parent));
-
-        public GameObject Instantiate(GameObject original, Transform parent, bool instantiateInWorldSpace) =>
-            InjectIntoGameObject(Object.Instantiate(original, parent, instantiateInWorldSpace));
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation) =>
-            InjectIntoGameObject(Object.Instantiate(original, position, rotation));
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent) =>
-            InjectIntoGameObject(Object.Instantiate(original, position, rotation, parent));
 
         private IServiceScope InjectIntoType(Type type, object instance)
         {
