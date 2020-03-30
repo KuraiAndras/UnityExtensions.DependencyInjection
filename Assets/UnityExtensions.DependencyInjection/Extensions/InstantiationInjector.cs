@@ -10,7 +10,8 @@ namespace UnityExtensions.DependencyInjection.Extensions
         {
             if (services is null) throw new ArgumentNullException(nameof(services));
 
-            services.AddSingleton<IGameObjectInjector, SceneInjector>(_ => Object.FindObjectOfType<SceneInjector>());
+            services.AddSingleton<IGameObjectFactory, DefaultGameObjectFactory>();
+            services.AddSingleton<ISceneInjector, SceneInjector>(_ => Object.FindObjectOfType<SceneInjector>());
 
             return services;
         }

@@ -7,11 +7,10 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityExtensions.DependencyInjection.Extensions;
-using Object = UnityEngine.Object;
 
 namespace UnityExtensions.DependencyInjection
 {
-    public sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
+    public sealed class SceneInjector : MonoBehaviour, ISceneInjector
     {
         private readonly ConcurrentDictionary<Type, (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos)> _resolveDictionary =
             new ConcurrentDictionary<Type, (FieldInfo[], PropertyInfo[], MethodInfo[])>();
@@ -22,6 +21,8 @@ namespace UnityExtensions.DependencyInjection
 
         public void InitializeScene(IServiceProvider serviceProvider, Action<SceneInjectorOptions> optionsBuilder = default)
         {
+            if (_serviceProvider is ServiceProvider sp) sp.Dispose();
+
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             optionsBuilder?.Invoke(_options);
@@ -52,19 +53,10 @@ namespace UnityExtensions.DependencyInjection
             return gameObjectInstance;
         }
 
-        public GameObject Instantiate(GameObject original) => InjectIntoGameObject(Object.Instantiate(original));
-
-        public GameObject Instantiate(GameObject original, Transform parent) =>
-            InjectIntoGameObject(Object.Instantiate(original, parent));
-
-        public GameObject Instantiate(GameObject original, Transform parent, bool instantiateInWorldSpace) =>
-            InjectIntoGameObject(Object.Instantiate(original, parent, instantiateInWorldSpace));
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation) =>
-            InjectIntoGameObject(Object.Instantiate(original, position, rotation));
-
-        public GameObject Instantiate(GameObject original, Vector3 position, Quaternion rotation, Transform parent) =>
-            InjectIntoGameObject(Object.Instantiate(original, position, rotation, parent));
+        private void OnDestroy()
+        {
+            if (_serviceProvider is ServiceProvider sp) sp.Dispose();
+        }
 
         private IServiceScope InjectIntoType(Type type, object instance)
         {
@@ -81,6 +73,42 @@ namespace UnityExtensions.DependencyInjection
             methodInfos.ForEach(m => didInstantiate = Inject(instance, scope, m));
 
             return didInstantiate ? scope : null;
+        }
+
+        private (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos) GetMembers(Type type)
+        {
+            var allTypes = type
+                .GetAllTypes()
+                .ToList();
+
+            if (!_options.UseCaching) return GetMembersInternal(allTypes);
+
+            if (!_resolveDictionary.TryGetValue(type, out var members))
+            {
+                members = GetMembersInternal(allTypes);
+                _resolveDictionary.TryAdd(type, members);
+            }
+
+            return members;
+        }
+
+        private static (FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods) GetMembersInternal(IReadOnlyCollection<Type> allTypes)
+        {
+            const BindingFlags instanceBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+
+            var fieldsToInject = allTypes
+                .SelectMany(t => t.GetFields(instanceBindingFlags))
+                .FilterMembersToArray();
+
+            var propertiesToInject = allTypes
+                .SelectMany(t => t.GetProperties(instanceBindingFlags))
+                .FilterMembersToArray();
+
+            var methodsToInject = allTypes
+                .SelectMany(t => t.GetMethods(instanceBindingFlags))
+                .FilterMembersToArray();
+
+            return (fieldsToInject, propertiesToInject, methodsToInject);
         }
 
         private static bool Inject(object instance, IServiceScope scope, PropertyInfo property)
@@ -120,41 +148,5 @@ namespace UnityExtensions.DependencyInjection
         }
 
         private static object GetService(IServiceScope scope, Type memberType) => scope.ServiceProvider.GetService(memberType);
-
-        private (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos) GetMembers(Type type)
-        {
-            var allTypes = type
-                .GetAllTypes()
-                .ToList();
-
-            if (!_options.UseCaching) return GetMembersInternal(allTypes);
-
-            if (!_resolveDictionary.TryGetValue(type, out var members))
-            {
-                members = GetMembersInternal(allTypes);
-                _resolveDictionary.TryAdd(type, members);
-            }
-
-            return members;
-        }
-
-        private static (FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods) GetMembersInternal(IReadOnlyCollection<Type> allTypes)
-        {
-            const BindingFlags instanceBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-
-            var fieldsToInject = allTypes
-                .SelectMany(t => t.GetFields(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            var propertiesToInject = allTypes
-                .SelectMany(t => t.GetProperties(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            var methodsToInject = allTypes
-                .SelectMany(t => t.GetMethods(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            return (fieldsToInject, propertiesToInject, methodsToInject);
-        }
     }
 }

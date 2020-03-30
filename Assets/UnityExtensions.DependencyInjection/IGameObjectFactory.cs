@@ -2,15 +2,8 @@
 
 namespace UnityExtensions.DependencyInjection
 {
-    public interface IGameObjectInjector
+    public interface IGameObjectFactory
     {
-        /// <summary>
-        /// Sets up usages of the InjectAttribute
-        /// </summary>
-        /// <param name="gameObjectInstance">GameObject instance to inject into</param>
-        /// <returns>Original instance</returns>
-        GameObject InjectIntoGameObject(GameObject gameObjectInstance);
-
         /// <summary>
         /// Calls Object.Instantiate with the appropriate parameters
         /// Injects into created instance.
