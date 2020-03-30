@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace UnityExtensions.DependencyInjection.Extensions
 {
-    internal static class TypeExtensions
+    internal static class TypeHelpers
     {
         internal static bool IsAutoProperty(this PropertyInfo property)
         {
@@ -35,6 +35,16 @@ namespace UnityExtensions.DependencyInjection.Extensions
             return memberInfo.GetCustomAttributes<InjectAttribute>().Any();
         }
 
+        internal static IEnumerable<Type> GetAllTypes(this Type type)
+        {
+            yield return type;
+
+            foreach (var parentType in type.GetParentTypes())
+            {
+                yield return parentType;
+            }
+        }
+
         internal static IEnumerable<Type> GetParentTypes(this Type type)
         {
             if (type == null || type.BaseType() == null || type == typeof(object) || type.BaseType() == typeof(object))
@@ -59,6 +69,17 @@ namespace UnityExtensions.DependencyInjection.Extensions
 #else
             return type.BaseType;
 #endif
+        }
+
+        public static IEnumerable<T> FilterMembers<T>(this IEnumerable<T> members) where T : MemberInfo => members.Where(MemberHasInjectAttribute).Distinct();
+
+        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (action == null) throw new ArgumentNullException(nameof(action));
+
+            foreach (var element in source)
+                action(element);
         }
     }
 }

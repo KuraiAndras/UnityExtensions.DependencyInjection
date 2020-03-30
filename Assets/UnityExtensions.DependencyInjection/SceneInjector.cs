@@ -68,57 +68,69 @@ namespace UnityExtensions.DependencyInjection
             var scope = _serviceProvider.CreateScope();
 
             var allTypes = type
-                .GetParentTypes()
-                .Concat(new[] { type })
+                .GetAllTypes()
                 .ToList();
 
-            foreach (var field in allTypes
+            var fieldsToInject = allTypes
                 .SelectMany(t => t.GetFields(InstanceBindingFlags))
-                .Where(TypeExtensions.MemberHasInjectAttribute)
-                .Distinct())
-            {
-                field.SetValue(instance, GetService(scope, field.FieldType));
-                didInstantiate = true;
-            }
+                .FilterMembers()
+                .ToList();
 
-            foreach (var property in allTypes
+            var propertiesToInject = allTypes
                 .SelectMany(t => t.GetProperties(InstanceBindingFlags))
-                .Where(TypeExtensions.MemberHasInjectAttribute)
-                .Distinct())
-            {
-                if (property.CanWrite)
-                {
-                    property.SetValue(instance, GetService(scope, property.PropertyType));
-                    didInstantiate = true;
-                }
-                else if (property.IsAutoProperty())
-                {
-                    property.GetAutoPropertyBackingField().SetValue(instance, GetService(scope, property.PropertyType));
-                    didInstantiate = true;
-                }
-            }
+                .FilterMembers()
+                .ToList();
 
-            foreach (var method in allTypes
+            var methodsToInject = allTypes
                 .SelectMany(t => t.GetMethods(InstanceBindingFlags))
-                .Where(TypeExtensions.MemberHasInjectAttribute)
-                .Distinct())
-            {
-                var methodParameters = method.GetParameters();
-                var parameters = new object[methodParameters.Length];
-                for (var i = 0; i < methodParameters.Length; i++)
-                {
-                    parameters[i] = scope.ServiceProvider.GetService(methodParameters[i].ParameterType);
-                    didInstantiate = true;
-                }
+                .FilterMembers()
+                .ToList();
 
-                method.Invoke(instance, parameters);
-            }
+            fieldsToInject.ForEach(f => didInstantiate = Inject(instance, scope, f));
+            propertiesToInject.ForEach(p => didInstantiate = Inject(instance, scope, p));
+            methodsToInject.ForEach(m => didInstantiate = Inject(instance, scope, m));
 
             return didInstantiate ? scope : null;
         }
 
+        private static bool Inject(object instance, IServiceScope scope, PropertyInfo property)
+        {
+            if (property.CanWrite)
+            {
+                property.SetValue(instance, GetService(scope, property.PropertyType));
+                return true;
+            }
+
+            if (!property.IsAutoProperty()) return false;
+
+            property.GetAutoPropertyBackingField().SetValue(instance, GetService(scope, property.PropertyType));
+
+            return true;
+        }
+
+        private static bool Inject(object instance, IServiceScope scope, FieldInfo field)
+        {
+            field.SetValue(instance, GetService(scope, field.FieldType));
+
+            return true;
+        }
+
+        private static bool Inject(object instance, IServiceScope scope, MethodBase method)
+        {
+            var methodParameters = method.GetParameters();
+            var parameters = new object[methodParameters.Length];
+            for (var i = 0; i < methodParameters.Length; i++)
+            {
+                parameters[i] = scope.ServiceProvider.GetService(methodParameters[i].ParameterType);
+            }
+
+            method.Invoke(instance, parameters);
+
+            return true;
+        }
+
         private static object GetService(IServiceScope scope, Type memberType) => scope.ServiceProvider.GetService(memberType);
 
-        private static BindingFlags InstanceBindingFlags => BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+        private static BindingFlags InstanceBindingFlags { get; } = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
     }
 }
