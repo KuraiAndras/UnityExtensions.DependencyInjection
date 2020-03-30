@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -11,6 +13,9 @@ namespace UnityExtensions.DependencyInjection
 {
     public sealed class SceneInjector : MonoBehaviour, IGameObjectInjector
     {
+        private readonly ConcurrentDictionary<Type, (List<FieldInfo> fieldInfos, List<PropertyInfo> propertyInfos, List<MethodInfo> methodInfos)> _resolveDictionary =
+            new ConcurrentDictionary<Type, (List<FieldInfo>, List<PropertyInfo>, List<MethodInfo>)>();
+
         private IServiceProvider _serviceProvider;
 
         public void InitializeScene(IServiceProvider serviceProvider)
@@ -65,30 +70,37 @@ namespace UnityExtensions.DependencyInjection
 
             var didInstantiate = false;
 
+            if (!_resolveDictionary.ContainsKey(type))
+            {
+                var allTypes = type
+                    .GetAllTypes()
+                    .ToList();
+
+                var fieldsToInject = allTypes
+                    .SelectMany(t => t.GetFields(InstanceBindingFlags))
+                    .FilterMembers()
+                    .ToList();
+
+                var propertiesToInject = allTypes
+                    .SelectMany(t => t.GetProperties(InstanceBindingFlags))
+                    .FilterMembers()
+                    .ToList();
+
+                var methodsToInject = allTypes
+                    .SelectMany(t => t.GetMethods(InstanceBindingFlags))
+                    .FilterMembers()
+                    .ToList();
+
+                _resolveDictionary.TryAdd(type, (fieldsToInject, propertiesToInject, methodsToInject));
+            }
+
             var scope = _serviceProvider.CreateScope();
 
-            var allTypes = type
-                .GetAllTypes()
-                .ToList();
+            _resolveDictionary.TryGetValue(type, out var members);
 
-            var fieldsToInject = allTypes
-                .SelectMany(t => t.GetFields(InstanceBindingFlags))
-                .FilterMembers()
-                .ToList();
-
-            var propertiesToInject = allTypes
-                .SelectMany(t => t.GetProperties(InstanceBindingFlags))
-                .FilterMembers()
-                .ToList();
-
-            var methodsToInject = allTypes
-                .SelectMany(t => t.GetMethods(InstanceBindingFlags))
-                .FilterMembers()
-                .ToList();
-
-            fieldsToInject.ForEach(f => didInstantiate = Inject(instance, scope, f));
-            propertiesToInject.ForEach(p => didInstantiate = Inject(instance, scope, p));
-            methodsToInject.ForEach(m => didInstantiate = Inject(instance, scope, m));
+            members.fieldInfos.ForEach(f => didInstantiate = Inject(instance, scope, f));
+            members.propertyInfos.ForEach(p => didInstantiate = Inject(instance, scope, p));
+            members.methodInfos.ForEach(m => didInstantiate = Inject(instance, scope, m));
 
             return didInstantiate ? scope : null;
         }
@@ -121,7 +133,7 @@ namespace UnityExtensions.DependencyInjection
             var parameters = new object[methodParameters.Length];
             for (var i = 0; i < methodParameters.Length; i++)
             {
-                parameters[i] = scope.ServiceProvider.GetService(methodParameters[i].ParameterType);
+                parameters[i] = GetService(scope, methodParameters[i].ParameterType);
             }
 
             method.Invoke(instance, parameters);
