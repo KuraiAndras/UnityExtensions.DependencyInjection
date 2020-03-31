@@ -121,7 +121,6 @@ var instance = gameObjectFactory.Instantiate(prefab); // Prefab is created and i
 ```
 You don't have to call InjectIntoGameObject on prefab children. When InjectIntoGameObject is called all the scripts on the game object and it's children which have the InjectAttribute gets injected.
 
-
 ## Scopes, Disposables
 
  - An IServiceScope is created for every script found in a GameObject.
@@ -129,6 +128,8 @@ You don't have to call InjectIntoGameObject on prefab children. When InjectIntoG
  - A DestroyDetector script is added to every GameObject that receives injection. When the game object is destroyed, the DestroyDetector disposes of all the scopes that got created for that specific game object.
  - Thus if you create a prefab, destroy one of it's children then only the scopes associated with that child are disposed.
  - DestroyDetector is internal, and is hidden in the Inspector.
+ - Destroying the game object holding the SceneInjector disposes of the ServiceProvider
 
- ## Notes
+## Notes
   - To see sample usage check out tests and test scenes
+  - Pull requests are welcome!
