@@ -41,13 +41,27 @@ namespace UnityExtensions.DependencyInjection
                 .GetComponentsInChildren(typeof(MonoBehaviour), true)
                 .Select(c => (c.GetType(), (object)c, c.gameObject));
 
+            var destroyDictionary = new Dictionary<GameObject, List<IDisposable>>();
+
             foreach (var (type, instance, componentGameObject) in componentsToInject)
             {
                 var instanceScope = InjectIntoType(type, instance);
 
                 if (instanceScope is null) continue;
 
-                componentGameObject.AddComponent<DestroyDetector>().Disposable = instanceScope;
+                if (destroyDictionary.TryGetValue(componentGameObject, out var disposables))
+                {
+                    disposables.Add(instanceScope);
+                }
+                else
+                {
+                    destroyDictionary.Add(componentGameObject, new List<IDisposable> { instanceScope });
+                }
+            }
+
+            foreach (var destroyable in destroyDictionary)
+            {
+                destroyable.Key.AddComponent<DestroyDetector>().RegisterDisposables(destroyable.Value.ToArray());
             }
 
             return gameObjectInstance;
@@ -75,8 +89,72 @@ namespace UnityExtensions.DependencyInjection
             return didInstantiate ? scope : null;
         }
 
+        private static bool Inject(object instance, IServiceScope scope, MemberInfo memberInfo)
+        {
+            object GetService(IServiceScope scopeInternal, Type memberTypeInternal) => scopeInternal.ServiceProvider.GetService(memberTypeInternal);
+
+            switch (memberInfo)
+            {
+                case FieldInfo field:
+                {
+                    field.SetValue(instance, GetService(scope, field.FieldType));
+
+                    return true;
+                }
+                case PropertyInfo property:
+                {
+                    if (property.CanWrite)
+                    {
+                        property.SetValue(instance, GetService(scope, property.PropertyType));
+                        return true;
+                    }
+
+                    if (!property.IsAutoProperty()) return false;
+
+                    property.GetAutoPropertyBackingField().SetValue(instance, GetService(scope, property.PropertyType));
+
+                    return true;
+                }
+                case MethodInfo method:
+                {
+                    if (method.IsConstructor) return false;
+
+                    var methodParameters = method.GetParameters();
+                    var parameters = new object[methodParameters.Length];
+                    for (var i = 0; i < methodParameters.Length; i++)
+                    {
+                        parameters[i] = GetService(scope, methodParameters[i].ParameterType);
+                    }
+
+                    method.Invoke(instance, parameters);
+
+                    return true;
+                }
+                default: throw new MemberAccessException($"Unknown member: {memberInfo}");
+            }
+        }
+
         private (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos) GetMembers(Type type)
         {
+            (FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods) GetMembersInternal(IReadOnlyCollection<Type> allTypesInternal)
+            {
+                const BindingFlags instanceBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+
+                var fieldsToInject = allTypesInternal
+                    .SelectMany(t => t.GetFields(instanceBindingFlags))
+                    .FilterMembersToArray();
+
+                var propertiesToInject = allTypesInternal
+                    .SelectMany(t => t.GetProperties(instanceBindingFlags))
+                    .FilterMembersToArray();
+
+                var methodsToInject = allTypesInternal
+                    .SelectMany(t => t.GetMethods(instanceBindingFlags))
+                    .FilterMembersToArray();
+
+                return (fieldsToInject, propertiesToInject, methodsToInject);
+            }
+
             var allTypes = type
                 .GetAllTypes()
                 .ToList();
@@ -91,62 +169,5 @@ namespace UnityExtensions.DependencyInjection
 
             return members;
         }
-
-        private static (FieldInfo[] fields, PropertyInfo[] properties, MethodInfo[] methods) GetMembersInternal(IReadOnlyCollection<Type> allTypes)
-        {
-            const BindingFlags instanceBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-
-            var fieldsToInject = allTypes
-                .SelectMany(t => t.GetFields(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            var propertiesToInject = allTypes
-                .SelectMany(t => t.GetProperties(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            var methodsToInject = allTypes
-                .SelectMany(t => t.GetMethods(instanceBindingFlags))
-                .FilterMembersToArray();
-
-            return (fieldsToInject, propertiesToInject, methodsToInject);
-        }
-
-        private static bool Inject(object instance, IServiceScope scope, PropertyInfo property)
-        {
-            if (property.CanWrite)
-            {
-                property.SetValue(instance, GetService(scope, property.PropertyType));
-                return true;
-            }
-
-            if (!property.IsAutoProperty()) return false;
-
-            property.GetAutoPropertyBackingField().SetValue(instance, GetService(scope, property.PropertyType));
-
-            return true;
-        }
-
-        private static bool Inject(object instance, IServiceScope scope, FieldInfo field)
-        {
-            field.SetValue(instance, GetService(scope, field.FieldType));
-
-            return true;
-        }
-
-        private static bool Inject(object instance, IServiceScope scope, MethodBase method)
-        {
-            var methodParameters = method.GetParameters();
-            var parameters = new object[methodParameters.Length];
-            for (var i = 0; i < methodParameters.Length; i++)
-            {
-                parameters[i] = GetService(scope, methodParameters[i].ParameterType);
-            }
-
-            method.Invoke(instance, parameters);
-
-            return true;
-        }
-
-        private static object GetService(IServiceScope scope, Type memberType) => scope.ServiceProvider.GetService(memberType);
     }
 }

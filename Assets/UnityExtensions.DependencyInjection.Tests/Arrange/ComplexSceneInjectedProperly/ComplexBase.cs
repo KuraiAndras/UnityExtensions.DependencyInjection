@@ -5,9 +5,11 @@ namespace UnityExtensions.DependencyInjection.Tests.Arrange.ComplexSceneInjected
 {
     public abstract class ComplexBase : MonoBehaviour
     {
+#pragma warning disable 649
         [Inject] private readonly ITestService1 _testService1;
 
         [Inject] protected ITestService1 TestService1 { get; }
+#pragma warning restore 649
 
         public void AssertBaseInjected()
         {
