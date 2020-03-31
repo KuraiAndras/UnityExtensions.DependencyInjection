@@ -130,6 +130,39 @@ You don't have to call InjectIntoGameObject on prefab children. When InjectIntoG
  - DestroyDetector is internal, and is hidden in the Inspector.
  - Destroying the game object holding the SceneInjector disposes of the ServiceProvider
 
+## Options
+
+You can customize some behavior of the SceneInjector by providing an action to configure the options when calling SceneInjector.InitializeScene
+```c#
+    [DefaultExecutionOrder(-999)]
+    public sealed class ExampleInjector : Injector
+    {
+        protected override IServiceProvider CreateServiceProvider()
+        {
+            Services.AddExampleInjection();
+
+            return base.CreateServiceProvider();
+        }
+
+        protected override void Awake()
+        {
+            SceneInjector.InitializeScene(
+                CreateServiceProvider(),
+                options =>
+                {
+                    options.DontDestroyOnLoad = true;
+                    options.UseCaching = true;
+                });
+        }
+    }
+```
+Current options:
+
+| Name | Description | Default value|
+|---|---|---|
+| UseCaching | During injection cache the fields, properties, methods needing injection | True|
+| DontDestroyOnLoad | Calls GameObject.DontDestroyOnLoad(SceneInjector) during initialization. This prevents the game object from being destroyed | True|
+
 ## Notes
   - To see sample usage check out tests and test scenes
   - Pull requests are welcome!

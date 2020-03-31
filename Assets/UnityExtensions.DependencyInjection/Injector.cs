@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using UnityEngine;
-using UnityExtensions.DependencyInjection.Extensions;
 
 namespace UnityExtensions.DependencyInjection
 {
