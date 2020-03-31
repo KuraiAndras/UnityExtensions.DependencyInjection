@@ -5,21 +5,26 @@ namespace UnityExtensions.DependencyInjection
 {
     internal sealed class DestroyDetector : MonoBehaviour
     {
-        private IDisposable _disposable;
+        private IDisposable[] _disposables;
 
-        internal IDisposable Disposable
+        internal void RegisterDisposables(IDisposable[] disposables)
         {
-            private get { return _disposable; }
-            set
-            {
-                _disposable?.Dispose();
+            DisposeAll();
 
-                _disposable = value;
-            }
+            _disposables = disposables;
         }
 
-
         private void Awake() => hideFlags = HideFlags.HideInInspector;
-        private void OnDestroy() => Disposable?.Dispose();
+        private void OnDestroy() => DisposeAll();
+
+        private void DisposeAll()
+        {
+            if (_disposables is null) return;
+
+            for (var i = 0; i < _disposables.Length; i++)
+            {
+                _disposables[i].Dispose();
+            }
+        }
     }
 }

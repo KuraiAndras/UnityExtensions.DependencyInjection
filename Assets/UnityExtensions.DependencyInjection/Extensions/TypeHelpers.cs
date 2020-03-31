@@ -55,9 +55,9 @@ namespace UnityExtensions.DependencyInjection.Extensions
 
         internal static void ForEach<T>(this T[] source, Action<T> action)
         {
-            for (var i = 0; i < source.Length; i++)
+            foreach (var item in source)
             {
-                action(source[i]);
+                action(item);
             }
         }
     }
