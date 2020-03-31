@@ -6,7 +6,7 @@ namespace UnityExtensions.DependencyInjection.Extensions
 {
     public static class InstantiationInjector
     {
-        public static IServiceCollection AddDefaultServices(this IServiceCollection services)
+        public static IServiceCollection AddInjectorServices(this IServiceCollection services)
         {
             if (services is null) throw new ArgumentNullException(nameof(services));
 
