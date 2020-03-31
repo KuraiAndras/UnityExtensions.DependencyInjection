@@ -1,40 +1,27 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using UnityEngine;
-using UnityExtensions.DependencyInjection.Extensions;
 
 namespace UnityExtensions.DependencyInjection
 {
-    /// <summary>
-    /// Has execution order : -999
-    /// </summary>
-    [DefaultExecutionOrder(-999)]
     [RequireComponent(typeof(SceneInjector))]
     public abstract class Injector : MonoBehaviour
     {
-        private static readonly IServiceCollection DefaultServiceCollection = new ServiceCollection().AddInstantiation();
+        protected SceneInjector SceneInjector => GetComponent<SceneInjector>();
+        protected IServiceCollection Services { get; set; }
 
-        protected Injector() => ServiceProvider = Services.BuildServiceProvider() ?? DefaultServiceCollection.BuildServiceProvider();
-
-        protected IServiceCollection Services { get; set; } = DefaultServiceCollection;
-
-        /// <summary>
-        /// Set to initialize services
-        /// </summary>
-        protected IServiceProvider ServiceProvider { get; set; }
+        protected Injector() => Services = new ServiceCollection().AddInjectorServices();
 
         /// <summary>
-        /// Starts initializing the scene with the ServiceProvider.
-        /// Gets called in Awake.
-        /// Injector should be set as the first relevant executing script.
-        /// Override this and add services here.
-        /// Don't forget to call base when overriden.
+        /// Create service registration here.
+        /// Builds <see cref="IServiceProvider"/> from <see cref="Services"/>
         /// </summary>
-        protected virtual void Startup() => GetComponent<SceneInjector>().InitializeScene(ServiceProvider);
+        protected virtual IServiceProvider CreateServiceProvider() => Services.BuildServiceProvider();
 
         /// <summary>
-        /// Calls Startup
+        /// Calls <see cref="SceneInjector"/> With <see cref="CreateServiceProvider"/>
+        /// Add <see cref="DefaultExecutionOrder"/> to ensure this awake is called first in your scene.
         /// </summary>
-        protected virtual void Awake() => Startup();
+        protected virtual void Awake() => SceneInjector.InitializeScene(CreateServiceProvider());
     }
 }

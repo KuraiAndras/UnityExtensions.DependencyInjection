@@ -1,15 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using UnityEngine;
 
 namespace UnityExtensions.DependencyInjection.Tests.Arrange.ComplexSceneInjectedProperly
 {
+    [DefaultExecutionOrder(-999)]
     public sealed class ComplexInjector : Injector
     {
-        protected override void Startup()
+        protected override IServiceProvider CreateServiceProvider()
         {
             Services.AddComplexInjection();
-            ServiceProvider = Services.BuildServiceProvider();
 
-            base.Startup();
+            return base.CreateServiceProvider();
         }
     }
 }
