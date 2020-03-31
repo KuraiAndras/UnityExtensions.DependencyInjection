@@ -7,33 +7,18 @@ namespace UnityExtensions.DependencyInjection.Extensions
 {
     internal static class TypeHelpers
     {
-        internal static bool IsAutoProperty(this PropertyInfo property)
-        {
-            if (property is null) throw new ArgumentNullException(nameof(property));
+        internal static bool IsAutoProperty(this PropertyInfo property) =>
+            property
+                .DeclaringType
+                ?.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+                .Any(f => f.Name.Contains("<" + property.Name + ">"))
+            ?? false;
 
-            return property
-                       .DeclaringType
-                       ?.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
-                       .Any(f => f.Name.Contains("<" + property.Name + ">"))
-                   ?? false;
-        }
-
-        internal static FieldInfo GetAutoPropertyBackingField(this PropertyInfo property)
-        {
-            if (property is null) throw new ArgumentNullException(nameof(property));
-
-            return property
+        internal static FieldInfo GetAutoPropertyBackingField(this PropertyInfo property) =>
+            property
                 .DeclaringType
                 ?.GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
                 .Single(f => f.Name.Contains("<" + property.Name + ">"));
-        }
-
-        internal static bool MemberHasInjectAttribute<T>(this T memberInfo) where T : MemberInfo
-        {
-            if (memberInfo is null) throw new ArgumentNullException(nameof(memberInfo));
-
-            return memberInfo.GetCustomAttributes<InjectAttribute>().Any();
-        }
 
         internal static IEnumerable<Type> GetAllTypes(this Type type)
         {
@@ -60,20 +45,15 @@ namespace UnityExtensions.DependencyInjection.Extensions
             }
         }
 
-        private static Type BaseType(this Type type)
-        {
-            if (type is null) throw new ArgumentNullException(nameof(type));
+        private static Type BaseType(this Type type) => type.GetTypeInfo().BaseType;
 
-#if UNITY_WSA && ENABLE_DOTNET && !UNITY_EDITOR
-            return type.GetTypeInfo().BaseType;
-#else
-            return type.BaseType;
-#endif
-        }
+        internal static T[] FilterMembersToArray<T>(this IEnumerable<T> members) where T : MemberInfo =>
+            members
+                .Where(m => m.GetCustomAttributes<InjectAttribute>().Any())
+                .Distinct()
+                .ToArray();
 
-        public static T[] FilterMembersToArray<T>(this IEnumerable<T> members) where T : MemberInfo => members.Where(MemberHasInjectAttribute).Distinct().ToArray();
-
-        public static void ForEach<T>(this T[] source, Action<T> action)
+        internal static void ForEach<T>(this T[] source, Action<T> action)
         {
             for (var i = 0; i < source.Length; i++)
             {
