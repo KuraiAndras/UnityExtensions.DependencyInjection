@@ -2,7 +2,7 @@
 using System;
 using Object = UnityEngine.Object;
 
-namespace UnityExtensions.DependencyInjection.Extensions
+namespace UnityExtensions.DependencyInjection
 {
     public static class InstantiationInjector
     {
