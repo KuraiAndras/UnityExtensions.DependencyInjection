@@ -21,11 +21,14 @@ namespace UnityExtensions.DependencyInjection
 
         public void InitializeScene(IServiceProvider serviceProvider, Action<SceneInjectorOptions> optionsBuilder = default)
         {
+            if (serviceProvider is null) throw new ArgumentNullException(nameof(serviceProvider));
+
             if (_serviceProvider is ServiceProvider sp) sp.Dispose();
 
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _serviceProvider = serviceProvider;
 
             optionsBuilder?.Invoke(_options);
+            if (_options.DontDestroyOnLoad) DontDestroyOnLoad(this);
 
             foreach (var rootGameObject in SceneManager.GetActiveScene().GetRootGameObjects())
             {
