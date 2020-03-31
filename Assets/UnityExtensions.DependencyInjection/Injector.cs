@@ -11,7 +11,7 @@ namespace UnityExtensions.DependencyInjection
         protected SceneInjector SceneInjector => GetComponent<SceneInjector>();
         protected IServiceCollection Services { get; set; }
 
-        protected Injector() => Services = new ServiceCollection().AddDefaultServices();
+        protected Injector() => Services = new ServiceCollection().AddInjectorServices();
 
         /// <summary>
         /// Create service registration here.

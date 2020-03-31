@@ -19,6 +19,7 @@ One option would be to use an already existing DI framework in unity, and transl
 
 ## Usage
 
+### Initialize
 Create a class that inherits from Injector:
 ```c#
 // Customize script execution order, so Awake is called first in you scene
@@ -57,7 +58,9 @@ public sealed class ExampleInjector : Injector
 }
 ```
 
-Add this script to any GameObject in your scene.
+Add this script to any one GameObject in your scene.
+
+### Usage in MonoBehavior
 
 Use the InjectAttribute to inject into a MonoBehavior:
 
@@ -77,7 +80,9 @@ public class ExampleScript : MonoBehaviour
 }
 ```
 
-Supported injection methods for InjectAttribute: Field, Property, Method. Injection happens in this order.
+Supported injection methods for InjectAttribute: Field, Property, Method. Injection happens in this order. **Constructor injection does not work.**
+
+### Usage in other classes
 
 Regular classes (not inheriting from MonoBehavior) can't use the InjectAttribute. For those cases use constructor injection.
 
@@ -91,37 +96,40 @@ public class ExampleService : IExampleService
 }
 ```
 
-The Injector class has a Script Execution Order of: -999 making it (and its subtypes) the first (unless other script is set bellow -999) one to be called in lifecycle events. Injector.Startup is called in the implementation of Injector.Awake.
+### Usage in Prefabs
 
 Injecting into prefabs:
+
 ```c#
 // Get a prefab that contains a script which needs injection.
 GameObject prefab = ;
-// IGameObjectInjector is a service added by default to Services
-IGameObjectInjector gameObjectInjector = ;
+// IGameObjectInjector and ISceneInjector are services added by default to Services
+IGameObjectFactory gameObjectFactory = ;
+ISceneInjector sceneInjector = ;
 
 // Either:
 
 // Instantiate the usual way
 var instance = GameObject.Instantiate(prefab);
 // Inject into freshly created GameObject
-gameObjectInjector.InjectIntoGameObject(instance);
+sceneInjector.InjectIntoGameObject(instance);
 
 // Or:
 
-// Use IGameObjectInjector which wraps GameObject.Instantiate(...) methods
-var instance = gameObjectInjector.Instantiate(prefab); // Prefab is created and injected
+// Use IGameObjectFactory which wraps GameObject.Instantiate(...) methods
+var instance = gameObjectFactory.Instantiate(prefab); // Prefab is created and injected
 ```
 You don't have to call InjectIntoGameObject on prefab children. When InjectIntoGameObject is called all the scripts on the game object and it's children which have the InjectAttribute gets injected.
-
 
 ## Scopes, Disposables
 
  - An IServiceScope is created for every script found in a GameObject.
- - Thus each MonoBehavior injected has it's own scope (Scoped lifetime services start from here)
- - A DestroyDetector script is added to the containing GameObject every time when a script gets injected. When the GameObject containing the script is destroyed the scope associated with the injection target is disposed.
+ - Thus each MonoBehavior injected has it's own scope (Scoped lifetime services start from here).
+ - A DestroyDetector script is added to every GameObject that receives injection. When the game object is destroyed, the DestroyDetector disposes of all the scopes that got created for that specific game object.
+ - Thus if you create a prefab, destroy one of it's children then only the scopes associated with that child are disposed.
  - DestroyDetector is internal, and is hidden in the Inspector.
- - Example: Player GameObject has 3 scripts which all have some dependencies implementing IDisposable. 3 DestroyDetector script gets added to Player (for each injected script). When Player is destroyed all scoped and transient services which implement IDisposable are disposed.
+ - Destroying the game object holding the SceneInjector disposes of the ServiceProvider
 
- ## Notes
+## Notes
   - To see sample usage check out tests and test scenes
+  - Pull requests are welcome!
