@@ -3,7 +3,7 @@
 
 A simple library to use the Microsoft.Extensions.DependencyInjection library in Unity3D.
 
-Unity supports this package up to 2.2.0. The dlls are included in the package
+The Microsoft.Extensions.DependencyInjection 2.0.0 dlls are included in the package
 
 ## Why?
 
