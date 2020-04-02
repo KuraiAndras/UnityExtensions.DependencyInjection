@@ -28,12 +28,13 @@ namespace UnityExtensions.DependencyInjection
             _serviceProvider = serviceProvider;
 
             optionsBuilder?.Invoke(_options);
-            if (_options.DontDestroyOnLoad) DontDestroyOnLoad(this);
 
             foreach (var rootGameObject in SceneManager.GetActiveScene().GetRootGameObjects())
             {
                 InjectIntoGameObject(rootGameObject);
             }
+
+            if (_options.DontDestroyOnLoad) DontDestroyOnLoad(this);
         }
 
         public GameObject InjectIntoGameObject(GameObject gameObjectInstance)
