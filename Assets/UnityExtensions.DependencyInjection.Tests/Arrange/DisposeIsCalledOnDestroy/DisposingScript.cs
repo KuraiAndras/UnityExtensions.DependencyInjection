@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Injecter;
+using UnityEngine;
 
 namespace UnityExtensions.DependencyInjection.Tests.Arrange.DisposeIsCalledOnDestroy
 {
