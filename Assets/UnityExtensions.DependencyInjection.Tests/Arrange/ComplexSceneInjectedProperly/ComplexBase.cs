@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using Injecter;
+using NUnit.Framework;
 using UnityEngine;
 
 namespace UnityExtensions.DependencyInjection.Tests.Arrange.ComplexSceneInjectedProperly
