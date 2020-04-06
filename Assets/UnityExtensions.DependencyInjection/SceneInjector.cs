@@ -1,10 +1,8 @@
 ﻿using Injecter;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,9 +10,6 @@ namespace UnityExtensions.DependencyInjection
 {
     public sealed class SceneInjector : MonoBehaviour, ISceneInjector
     {
-        private readonly ConcurrentDictionary<Type, (FieldInfo[] fieldInfos, PropertyInfo[] propertyInfos, MethodInfo[] methodInfos)> _resolveDictionary =
-            new ConcurrentDictionary<Type, (FieldInfo[], PropertyInfo[], MethodInfo[])>();
-
         private readonly SceneInjectorOptions _options = new SceneInjectorOptions();
 
         private IServiceProvider _serviceProvider;
