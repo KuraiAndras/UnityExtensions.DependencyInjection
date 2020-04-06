@@ -1,4 +1,7 @@
 # UnityExtensions.DependencyInjection
+
+**This project is deprecated. Please use [Injecter.Unity](https://github.com/KuraiAndras/Injecter)**
+
 [![openupm](https://img.shields.io/npm/v/com.unityextensions.dependencyinjection?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.unityextensions.dependencyinjection/)
 
 A simple library to use the Microsoft.Extensions.DependencyInjection library in Unity3D.
